@@ -10,4 +10,4 @@ ports:
   8080/tcp: 8080
 options: {}
 schema: {}
-image: "ghcr.io/f00lycooly/todoist-voice-ha:latest"
+image: "ghcr.io/f00lycooly/todoist-voice-ha:v2.0.0"
