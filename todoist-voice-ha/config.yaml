@@ -1,13 +1,20 @@
 name: "Todoist Voice HA"
 description: "Conversational task creation for Todoist"
-version: "2.0.0"
+version: "2.0.2"
 slug: "todoistvoice"
 arch:
   - amd64
 startup: application
 boot: manual
+hassio_api: true
 ports:
   8080/tcp: 8080
-options: {}
-schema: {}
-image: "ghcr.io/f00lycooly/todoist-voice-ha:v2.0.0"
+options:
+  todoist_token: ""
+  log_level: "info"
+  default_project_name: "Inbox"
+schema:
+  todoist_token: str
+  log_level: list(debug|info|warning|error)
+  default_project_name: str
+image: "ghcr.io/f00lycooly/todoist-voice-ha:latest"
