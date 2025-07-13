@@ -8,21 +8,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     
     steps:
       - uses: actions/checkout@v4
       
       - name: Log in to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        run: echo "${{ secrets.PACKAGES_TOKEN }}" | docker login ghcr.io -u f00lycooly --password-stdin
       
       - name: Build Docker image
         run: |
           cd todoist-voice-ha
-          # Use the full repository path
-          docker build -t ghcr.io/${{ github.repository_owner }}/todoist-voice-ha:latest .
+          docker build -t ghcr.io/f00lycooly/todoist-voice-ha:latest .
       
       - name: Push Docker image
-        run: docker push ghcr.io/${{ github.repository_owner }}/todoist-voice-ha:latest
+        run: docker push ghcr.io/f00lycooly/todoist-voice-ha:latest
