@@ -1,56 +1,47 @@
-# Todoist Voice HA
+# Todoist Voice HA - Home Assistant Add-on Repository
 
-[![GitHub Release][releases-shield]][releases]
-[![GitHub Activity][commits-shield]][commits]
-[![License][license-shield]](LICENSE)
-[![HACS][hacsbadge]][hacs]
+[![Add repository to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Ff00lycooly%2FTodoist-Voice-HA)
 
-Intelligent conversational task creation for Todoist with dynamic project management and AI-powered voice integration for Home Assistant.
+Intelligent conversational task creation for Todoist with Home Assistant integration.
 
-## Features
+## Add-ons
 
-🎙️ **Natural Voice Conversations** - Multi-turn dialogues for task creation  
-🧠 **Intelligent Project Matching** - Finds projects even with partial names  
-📁 **Dynamic Project Creation** - Creates new projects on-the-fly  
-📅 **Smart Date Parsing** - Understands "tomorrow", "next week", etc.  
-🏠 **Home Assistant Native** - Full integration with HA services  
-⚡ **Real-time Monitoring** - Health checks and status tracking  
+This repository contains the following add-on:
 
-## Quick Start
+### 🎙️ Todoist Voice HA
 
-### 1. Install the Add-on
-Add repository: `https://github.com/f00lycooly/Todoist-Voice-HA`
+![Supports aarch64 Architecture][aarch64-shield]
+![Supports amd64 Architecture][amd64-shield]
+![Supports armhf Architecture][armhf-shield]
+![Supports armv7 Architecture][armv7-shield]
+![Supports i386 Architecture][i386-shield]
 
-### 2. Install the Integration
-Via HACS or manual installation
+Intelligent conversational task creation for Todoist with dynamic project management and AI-powered voice integration.
 
-### 3. Configure
-Get your Todoist API token and configure both components
+[![Open add-on documentation](https://my.home-assistant.io/badges/supervisor_addon.svg)](https://my.home-assistant.io/redirect/supervisor_addon/?addon=todoist-voice-ha)
 
-## Documentation
+## Installation
 
-- [Installation Guide](docs/installation.md)
-- [Configuration](docs/configuration.md)
-- [Voice Commands](docs/voice-commands.md)
-- [Troubleshooting](docs/troubleshooting.md)
+1. Add this repository to your Home Assistant Supervisor:
+   - Settings → Add-ons → Add-on Store → ⋮ → Repositories
+   - Add: `https://github.com/f00lycooly/Todoist-Voice-HA`
 
-## Example Voice Commands
+2. Install the "Todoist Voice HA" add-on
 
-```
-"Add buy milk to my shopping list"
-"Create finish project report in work"
-"I need to call the doctor tomorrow"
-"Remind me to take out trash for Friday"
-```
+3. Configure your Todoist API token
 
-## License
+4. Start the add-on
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## Integration
 
-[releases-shield]: https://img.shields.io/github/release/f00lycooly/Todoist-Voice-HA.svg?style=for-the-badge
-[releases]: https://github.com/f00lycooly/Todoist-Voice-HA/releases
-[commits-shield]: https://img.shields.io/github/commit-activity/y/f00lycooly/Todoist-Voice-HA.svg?style=for-the-badge
-[commits]: https://github.com/f00lycooly/Todoist-Voice-HA/commits/main
-[hacs]: https://github.com/hacs/integration
-[hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
-[license-shield]: https://img.shields.io/github/license/f00lycooly/Todoist-Voice-HA.svg?style=for-the-badge
+This add-on works with the custom Home Assistant integration found in the `custom_components` directory.
+
+## Support
+
+For issues and feature requests: [GitHub Issues](https://github.com/f00lycooly/Todoist-Voice-HA/issues)
+
+[aarch64-shield]: https://img.shields.io/badge/aarch64-yes-green.svg
+[amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg
+[armhf-shield]: https://img.shields.io/badge/armhf-yes-green.svg
+[armv7-shield]: https://img.shields.io/badge/armv7-yes-green.svg
+[i386-shield]: https://img.shields.io/badge/i386-yes-green.svg
