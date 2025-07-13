@@ -1,0 +1,13 @@
+name: "Hello World Test"
+description: "Minimal test add-on"
+version: "1.0.0"
+slug: "hello-world-test"
+arch:
+  - amd64
+startup: application
+boot: manual
+ports:
+  8080/tcp: 8080
+options: {}
+schema: {}
+image: "hello-world"
