@@ -1,0 +1,36 @@
+# ============================================================
+# config/default.json - Default configuration
+
+{
+  "server": {
+    "port": 8080,
+    "host": "0.0.0.0",
+    "nodeEnv": "production"
+  },
+  "todoist": {
+    "apiBaseUrl": "https://api.todoist.com/rest/v2",
+    "defaultProjectName": "Inbox",
+    "defaultPriority": 3,
+    "defaultMainTaskPrefix": "Voice Tasks"
+  },
+  "cache": {
+    "projectCacheTimeout": 300000,
+    "maxCacheSize": 1000
+  },
+  "conversation": {
+    "defaultTimeout": 300,
+    "maxConversationAge": 3600,
+    "autoCleanupInterval": 600
+  },
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "maxFiles": 5,
+    "maxSize": "10m"
+  },
+  "homeAssistant": {
+    "supervisorUrl": "http://supervisor/core",
+    "notificationRetries": 3,
+    "healthCheckInterval": 30
+  }
+}

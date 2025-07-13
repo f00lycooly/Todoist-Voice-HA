@@ -1,0 +1,954 @@
+# Home Assistant Configuration for Todoist Voice HA Add-on
+# Add this to your configuration.yaml after installing the add-on
+
+# ==========================================
+# CORE INTEGRATION SETUP
+# ==========================================
+
+# RESTful sensors to monitor add-on and sync project data
+sensor:
+  - platform: rest
+    name: "Todoist Voice HA API Status"
+    resource: "http://a0d7b954-todoist-voice-ha:8080/health"
+    scan_interval: 60
+    json_attributes:
+      - status
+      - version
+      - uptime
+      - projectCacheStatus
+      - todoist
+    value_template: "{{ value_json.status }}"
+    
+  - platform: rest
+    name: "Todoist Voice HA Projects"
+    resource: "http://a0d7b954-todoist-voice-ha:8080/ha-services/projects"
+    scan_interval: 300  # Update every 5 minutes
+    json_attributes:
+      - projects
+      - projectNames
+      - lastUpdated
+    value_template: "{{ value_json.projects | length }}"
+
+# ==========================================
+# CONVERSATION STATE MANAGEMENT
+# ==========================================
+
+# Input helpers for conversation state and project management
+input_text:
+  # Main conversation context
+  todoist_voice_conversation_id:
+    name: Current Conversation ID
+    max: 50
+    initial: ""
+    icon: mdi:chat-processing
+  
+  claude_conversation_state:
+    name: Conversation State
+    max: 50
+    initial: "idle"
+    icon: mdi:state-machine
+  
+  # Voice processing buffers
+  claude_voice_input_buffer:
+    name: Voice Input Buffer
+    max: 2000
+    initial: ""
+    icon: mdi:microphone-message
+  
+  claude_parsed_task_items:
+    name: Parsed Task Items
+    max: 1000
+    initial: ""
+    icon: mdi:format-list-bulleted
+  
+  # Project selection context
+  claude_project_matches:
+    name: Found Project Matches
+    max: 500
+    initial: ""
+    icon: mdi:folder-search
+  
+  claude_selected_project:
+    name: Selected Project
+    max: 100
+    initial: ""
+    icon: mdi:folder-check
+  
+  # Date and priority context
+  claude_pending_due_date:
+    name: Pending Due Date
+    max: 50
+    initial: ""
+    icon: mdi:calendar-clock
+  
+  claude_task_priority:
+    name: Task Priority
+    max: 10
+    initial: "3"
+    icon: mdi:priority-high
+  
+  # Conversation context for complex flows
+  claude_conversation_context:
+    name: Conversation Context (JSON)
+    max: 2000
+    initial: "{}"
+    icon: mdi:code-json
+
+# Boolean flags for conversation flow control
+input_boolean:
+  claude_conversation_active:
+    name: Conversation Active
+    initial: false
+    icon: mdi:chat-processing
+  
+  claude_awaiting_project_selection:
+    name: Awaiting Project Selection
+    initial: false
+    icon: mdi:folder-question
+  
+  claude_awaiting_project_creation:
+    name: Awaiting Project Creation
+    initial: false
+    icon: mdi:folder-plus
+  
+  claude_awaiting_date_input:
+    name: Awaiting Date Input
+    initial: false
+    icon: mdi:calendar-question
+  
+  claude_awaiting_final_confirmation:
+    name: Awaiting Final Confirmation
+    initial: false
+    icon: mdi:check-circle-outline
+
+# Dynamic project selector (updated by automation)
+input_select:
+  claude_available_projects:
+    name: Available Todoist Projects
+    options:
+      - "Loading..."
+    initial: "Loading..."
+    icon: mdi:folder-multiple
+
+# Number inputs for configuration
+input_number:
+  claude_conversation_timeout:
+    name: Conversation Timeout (seconds)
+    min: 30
+    max: 600
+    step: 30
+    initial: 300
+    icon: mdi:timer-outline
+
+# ==========================================
+# ADVANCED TEMPLATE SENSORS
+# ==========================================
+
+template:
+  - sensor:
+      - name: "Todoist Voice Conversation Analysis"
+        state: "{{ states('input_text.todoist_voice_conversation_state') }}"
+        icon: mdi:brain
+        attributes:
+          conversation_id: "{{ states('input_text.todoist_voice_conversation_id') }}"
+          is_active: "{{ is_state('input_boolean.todoist_voice_conversation_active', 'on') }}"
+          current_state: "{{ states('input_text.todoist_voice_conversation_state') }}"
+          input_length: "{{ states('input_text.todoist_voice_input_buffer') | length }}"
+          has_project_matches: "{{ states('input_text.todoist_voice_project_matches') != '' }}"
+          selected_project: "{{ states('input_text.todoist_voice_selected_project') }}"
+          pending_date: "{{ states('input_text.todoist_voice_pending_due_date') }}"
+          priority_level: "{{ states('input_text.todoist_voice_task_priority') }}"
+          
+      - name: "Todoist Voice Project Sync Status"
+        state: >
+          {% set projects_sensor = state_attr('sensor.todoist_voice_ha_projects', 'projects') %}
+          {% if projects_sensor %}
+            {{ projects_sensor | length }}
+          {% else %}
+            0
+          {% endif %}
+        icon: mdi:sync
+        attributes:
+          last_sync: "{{ state_attr('sensor.todoist_voice_ha_projects', 'lastUpdated') }}"
+          project_names: "{{ state_attr('sensor.todoist_voice_ha_projects', 'projectNames') | default([]) }}"
+          sync_status: >
+            {% if is_state('sensor.todoist_voice_ha_api_status', 'healthy') %}
+              healthy
+            {% else %}
+              error
+            {% endif %}
+
+# ==========================================
+# REST COMMANDS FOR ADD-ON SERVICES
+# ==========================================
+
+rest_command:
+  # Core task creation
+  todoist_voice_create_task:
+    url: "http://a0d7b954-todoist-voice-ha:8080/ha-services/create-task"
+    method: POST
+    headers:
+      Content-Type: application/json
+    payload: >
+      {
+        "text": "{{ text }}",
+        "projectId": "{{ project_id if project_id else '' }}",
+        "projectName": "{{ project_name if project_name else '' }}",
+        "priority": {{ priority | default(3) }},
+        "dueDate": "{{ due_date if due_date else '' }}",
+        "labels": {{ labels | default(['voice', 'addon']) | list }},
+        "mainTaskTitle": "{{ main_task_title | default('Voice Tasks') }}",
+        "conversationId": "{{ conversation_id if conversation_id else '' }}"
+      }
+    timeout: 30
+
+  # Project management
+  todoist_voice_find_projects:
+    url: "http://a0d7b954-todoist-voice-ha:8080/ha-services/find-projects"
+    method: POST
+    headers:
+      Content-Type: application/json
+    payload: >
+      {
+        "query": "{{ query }}",
+        "maxResults": {{ max_results | default(5) }}
+      }
+    timeout: 15
+
+  todoist_voice_create_project:
+    url: "http://a0d7b954-todoist-voice-ha:8080/ha-services/create-project"
+    method: POST
+    headers:
+      Content-Type: application/json
+    payload: >
+      {
+        "name": "{{ name }}",
+        "color": "{{ color if color else '' }}",
+        "parentId": "{{ parent_id if parent_id else '' }}"
+      }
+    timeout: 15
+
+  todoist_voice_suggest_project_name:
+    url: "http://a0d7b954-todoist-voice-ha:8080/ha-services/suggest-project-name"
+    method: POST
+    headers:
+      Content-Type: application/json
+    payload: >
+      {
+        "hint": "{{ hint }}",
+        "context": "{{ context if context else '' }}"
+      }
+    timeout: 10
+
+  # Voice analysis
+  todoist_voice_parse_voice_input:
+    url: "http://a0d7b954-todoist-voice-ha:8080/ha-services/parse-voice-input"
+    method: POST
+    headers:
+      Content-Type: application/json
+    payload: >
+      {
+        "text": "{{ text }}",
+        "context": {{ context | default({}) }}
+      }
+    timeout: 15
+
+  todoist_voice_validate_date:
+    url: "http://a0d7b954-todoist-voice-ha:8080/ha-services/validate-date"
+    method: POST
+    headers:
+      Content-Type: application/json
+    payload: >
+      {
+        "dateInput": "{{ date_input }}",
+        "context": "{{ context if context else '' }}"
+      }
+    timeout: 10
+
+  # System management
+  todoist_voice_refresh_projects:
+    url: "http://a0d7b954-todoist-voice-ha:8080/ha-services/refresh-projects"
+    method: POST
+    headers:
+      Content-Type: application/json
+    payload: "{}"
+    timeout: 20
+
+# ==========================================
+# CONVERSATION INTENTS
+# ==========================================
+
+conversation:
+  intents:
+    TodoistVoiceAddTask:
+      - "Add {task_items} to my {project_hint}"
+      - "Create {task_items} in {project_hint}"
+      - "I need to {task_items}"
+      - "Remind me to {task_items}"
+      - "Add {task_items} for {due_date}"
+      - "{task_items} needs to be done {due_date}"
+      - "Add {priority} priority {task_items}"
+      - "Schedule {task_items} for {due_date}"
+      - "Put {task_items} on my list"
+      - "Create a task for {task_items}"
+    
+    TodoistVoiceQuickAdd:
+      - "Quick add {task_items}"
+      - "Fast task {task_items}"
+      - "Just add {task_items}"
+    
+    TodoistVoiceCreateProject:
+      - "Create a new project called {project_name}"
+      - "Make a project for {project_name}"
+      - "Add project {project_name}"
+    
+    TodoistVoiceListProjects:
+      - "What projects do I have"
+      - "List my projects"
+      - "Show me my projects"
+      - "What are my project options"
+
+# ==========================================
+# CORE CONVERSATION AUTOMATION
+# ==========================================
+
+automation:
+  # Main conversation trigger
+  - id: todoist_voice_conversation_handler
+    alias: "Todoist Voice HA - Main Conversation Handler"
+    description: "Handle voice commands and start conversation flows"
+    trigger:
+      - platform: conversation
+        command:
+          - "Add {task_items} to my {project_hint}"
+          - "Create {task_items} in {project_hint}"
+          - "I need to {task_items}"
+          - "Remind me to {task_items}"
+          - "Add {task_items} for {due_date}"
+          - "{task_items} needs to be done {due_date}"
+          - "Add {priority} priority {task_items}"
+          - "Schedule {task_items} for {due_date}"
+          - "Put {task_items} on my list"
+          - "Create a task for {task_items}"
+          - "Quick add {task_items}"
+    
+    condition:
+      - condition: state
+        entity_id: sensor.todoist_voice_ha_api_status
+        state: "healthy"
+    
+    action:
+      # Initialize conversation
+      - service: input_text.set_value
+        target:
+          entity_id: input_text.todoist_voice_conversation_id
+        data:
+          value: "{{ now().strftime('%Y%m%d_%H%M%S') }}_{{ range(1000, 9999) | random }}"
+      
+      - service: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.todoist_voice_conversation_active
+      
+      - service: input_text.set_value
+        target:
+          entity_id: input_text.todoist_voice_conversation_state
+        data:
+          value: "analyzing_input"
+      
+      # Store voice input
+      - service: input_text.set_value
+        target:
+          entity_id: input_text.todoist_voice_input_buffer
+        data:
+          value: >
+            {% if trigger.slots.task_items is defined %}
+              {{ trigger.slots.task_items }}
+            {% else %}
+              {{ trigger.text }}
+            {% endif %}
+      
+      # Parse the voice input
+      - service: rest_command.todoist_voice_parse_voice_input
+        data:
+          text: "{{ states('input_text.todoist_voice_input_buffer') }}"
+          context: >
+            {
+              "trigger_type": "conversation",
+              "conversation_id": "{{ states('input_text.todoist_voice_conversation_id') }}",
+              "project_hint": "{{ trigger.slots.project_hint if trigger.slots.project_hint is defined else '' }}",
+              "due_date_hint": "{{ trigger.slots.due_date if trigger.slots.due_date is defined else '' }}",
+              "priority_hint": "{{ trigger.slots.priority if trigger.slots.priority is defined else '' }}"
+            }
+      
+      # Wait for parsing to complete
+      - delay: "00:00:02"
+      
+      # Start project search if we have a project hint
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ trigger.slots.project_hint is defined and trigger.slots.project_hint != '' }}"
+            sequence:
+              - service: rest_command.todoist_voice_find_projects
+                data:
+                  query: "{{ trigger.slots.project_hint }}"
+                  max_results: 5
+              
+              - delay: "00:00:01"
+              
+              # Continue to project selection logic
+              - service: automation.trigger
+                target:
+                  entity_id: automation.todoist_voice_project_selector
+        default:
+          # No project hint, ask user to specify
+          - service: input_text.set_value
+            target:
+              entity_id: input_text.todoist_voice_conversation_state
+            data:
+              value: "awaiting_project_selection"
+          
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.todoist_voice_awaiting_project_selection
+          
+          - service: assist_satellite.ask_question
+            data:
+              entity_id: assist_satellite.living_room_voice_assistant
+              question: "Which project should I add '{{ states('input_text.todoist_voice_input_buffer') }}' to? You can say a project name or ask me to list your projects."
+              answers:
+                - id: project_name
+                  sentences:
+                    - "{project_name}"
+                - id: list_projects
+                  sentences:
+                    - "list projects"
+                    - "show projects"
+                    - "what projects"
+              response_variable: project_response.set_value
+        target:
+          entity_id: input_text.claude_conversation_state
+        data:
+          value: "analyzing_input"
+      
+      # Store voice input
+      - service: input_text.set_value
+        target:
+          entity_id: input_text.claude_voice_input_buffer
+        data:
+          value: >
+            {% if trigger.slots.task_items is defined %}
+              {{ trigger.slots.task_items }}
+            {% else %}
+              {{ trigger.text }}
+            {% endif %}
+      
+      # Parse the voice input
+      - service: rest_command.claude_parse_voice_input
+        data:
+          text: "{{ states('input_text.claude_voice_input_buffer') }}"
+          context: >
+            {
+              "trigger_type": "conversation",
+              "conversation_id": "{{ states('input_text.claude_conversation_id') }}",
+              "project_hint": "{{ trigger.slots.project_hint if trigger.slots.project_hint is defined else '' }}",
+              "due_date_hint": "{{ trigger.slots.due_date if trigger.slots.due_date is defined else '' }}",
+              "priority_hint": "{{ trigger.slots.priority if trigger.slots.priority is defined else '' }}"
+            }
+      
+      # Wait for parsing to complete
+      - delay: "00:00:02"
+      
+      # Start project search if we have a project hint
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ trigger.slots.project_hint is defined and trigger.slots.project_hint != '' }}"
+            sequence:
+              - service: rest_command.claude_find_projects
+                data:
+                  query: "{{ trigger.slots.project_hint }}"
+                  max_results: 5
+              
+              - delay: "00:00:01"
+              
+              # Continue to project selection logic
+              - service: automation.trigger
+                target:
+                  entity_id: automation.claude_todoist_project_selector
+        default:
+          # No project hint, ask user to specify
+          - service: input_text.set_value
+            target:
+              entity_id: input_text.claude_conversation_state
+            data:
+              value: "awaiting_project_selection"
+          
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.claude_awaiting_project_selection
+          
+          - service: assist_satellite.ask_question
+            data:
+              entity_id: assist_satellite.living_room_voice_assistant
+              question: "Which project should I add '{{ states('input_text.claude_voice_input_buffer') }}' to? You can say a project name or ask me to list your projects."
+              answers:
+                - id: project_name
+                  sentences:
+                    - "{project_name}"
+                - id: list_projects
+                  sentences:
+                    - "list projects"
+                    - "show projects"
+                    - "what projects"
+              response_variable: project_response
+
+  # Project selection handler
+  - id: claude_todoist_project_selector
+    alias: "Claude Todoist - Project Selection Logic"
+    description: "Handle project matching and selection"
+    trigger:
+      - platform: state
+        entity_id: automation.claude_todoist_conversation_handler
+    
+    condition:
+      - condition: state
+        entity_id: input_boolean.claude_conversation_active
+        state: "on"
+    
+    action:
+      # Simulate project search results (this would be populated by the REST call)
+      # In a real implementation, you'd parse the response from claude_find_projects
+      - service: input_text.set_value
+        target:
+          entity_id: input_text.claude_project_matches
+        data:
+          value: >
+            {% set project_hint = trigger.slots.project_hint if trigger.slots.project_hint is defined else '' %}
+            {% set available_projects = state_attr('sensor.claude_todoist_projects', 'projectNames') | default([]) %}
+            {% set matches = [] %}
+            {% for project in available_projects %}
+              {% if project_hint.lower() in project.lower() %}
+                {% set matches = matches + [project] %}
+              {% endif %}
+            {% endfor %}
+            {{ matches | join(',') if matches else '' }}
+      
+      - choose:
+          # No matches found - offer to create project
+          - conditions:
+              - condition: template
+                value_template: "{{ states('input_text.claude_project_matches') == '' }}"
+            sequence:
+              - service: input_text.set_value
+                target:
+                  entity_id: input_text.claude_conversation_state
+                data:
+                  value: "awaiting_project_creation"
+              
+              - service: input_boolean.turn_on
+                target:
+                  entity_id: input_boolean.claude_awaiting_project_creation
+              
+              - service: rest_command.claude_suggest_project_name
+                data:
+                  hint: "{{ trigger.slots.project_hint if trigger.slots.project_hint is defined else 'New Project' }}"
+              
+              - delay: "00:00:01"
+              
+              - service: assist_satellite.ask_question
+                data:
+                  entity_id: assist_satellite.living_room_voice_assistant
+                  question: "I couldn't find a project matching '{{ trigger.slots.project_hint if trigger.slots.project_hint is defined else 'that' }}'. Should I create a new project called '{{ trigger.slots.project_hint | title if trigger.slots.project_hint is defined else 'New Project' }}'?"
+                  answers:
+                    - id: yes
+                      sentences:
+                        - "yes"
+                        - "create it"
+                        - "make it"
+                        - "sure"
+                        - "okay"
+                        - "go ahead"
+                    - id: no
+                      sentences:
+                        - "no"
+                        - "don't create"
+                        - "cancel"
+                        - "stop"
+                  response_variable: create_project_response
+          
+          # One match found - use it
+          - conditions:
+              - condition: template
+                value_template: "{{ states('input_text.claude_project_matches').split(',') | length == 1 }}"
+            sequence:
+              - service: input_text.set_value
+                target:
+                  entity_id: input_text.claude_selected_project
+                data:
+                  value: "{{ states('input_text.claude_project_matches') }}"
+              
+              - service: automation.trigger
+                target:
+                  entity_id: automation.claude_todoist_date_handler
+          
+          # Multiple matches found - ask user to choose
+          - conditions:
+              - condition: template
+                value_template: "{{ states('input_text.claude_project_matches').split(',') | length > 1 }}"
+            sequence:
+              - service: input_text.set_value
+                target:
+                  entity_id: input_text.claude_conversation_state
+                data:
+                  value: "awaiting_project_selection"
+              
+              - service: input_boolean.turn_on
+                target:
+                  entity_id: input_boolean.claude_awaiting_project_selection
+              
+              - service: assist_satellite.ask_question
+                data:
+                  entity_id: assist_satellite.living_room_voice_assistant
+                  question: "I found {{ states('input_text.claude_project_matches').split(',') | length }} projects that might match: {{ states('input_text.claude_project_matches').split(',') | join(', ') }}. Which one should I use?"
+                  answers: >
+                    {% set matches = states('input_text.claude_project_matches').split(',') %}
+                    {% set answers = [] %}
+                    {% for project in matches %}
+                      {% set answer = {
+                        "id": "project_" + loop.index0|string,
+                        "sentences": [project, "the " + loop.index|string + " one", loop.index|string]
+                      } %}
+                      {% set answers = answers + [answer] %}
+                    {% endfor %}
+                    {{ answers }}
+                  response_variable: project_choice_response
+
+  # Date handling automation
+  - id: claude_todoist_date_handler
+    alias: "Claude Todoist - Date Processing"
+    description: "Handle due date parsing and confirmation"
+    trigger:
+      - platform: state
+        entity_id: automation.claude_todoist_project_selector
+    
+    condition:
+      - condition: state
+        entity_id: input_boolean.claude_conversation_active
+        state: "on"
+      - condition: template
+        value_template: "{{ states('input_text.claude_selected_project') != '' }}"
+    
+    action:
+      # Check if we have a due date from the original command
+      - choose:
+          # No date specified and require_date_confirmation is enabled
+          - conditions:
+              - condition: template
+                value_template: "{{ states('input_text.claude_pending_due_date') == '' }}"
+              - condition: state
+                entity_id: input_boolean.claude_awaiting_date_input
+                state: "off"
+            sequence:
+              - service: input_text.set_value
+                target:
+                  entity_id: input_text.claude_conversation_state
+                data:
+                  value: "awaiting_date_input"
+              
+              - service: input_boolean.turn_on
+                target:
+                  entity_id: input_boolean.claude_awaiting_date_input
+              
+              - service: assist_satellite.ask_question
+                data:
+                  entity_id: assist_satellite.living_room_voice_assistant
+                  question: "When should '{{ states('input_text.claude_voice_input_buffer') }}' be due?"
+                  answers:
+                    - id: today
+                      sentences: ["today", "now"]
+                    - id: tomorrow
+                      sentences: ["tomorrow"]
+                    - id: this_week
+                      sentences: ["this week", "by friday", "end of week"]
+                    - id: next_week
+                      sentences: ["next week", "following week"]
+                    - id: no_date
+                      sentences: ["no date", "no due date", "whenever", "no deadline"]
+                    - id: specific_date
+                      sentences: ["{date}"]
+                  response_variable: date_response
+        
+        # Have date or don't require confirmation, proceed to final confirmation
+        default:
+          - service: automation.trigger
+            target:
+              entity_id: automation.claude_todoist_final_confirmation
+
+  # Final confirmation and task creation
+  - id: claude_todoist_final_confirmation
+    alias: "Claude Todoist - Final Confirmation and Creation"
+    description: "Final confirmation and task creation"
+    trigger:
+      - platform: state
+        entity_id: automation.claude_todoist_date_handler
+    
+    condition:
+      - condition: state
+        entity_id: input_boolean.claude_conversation_active
+        state: "on"
+      - condition: template
+        value_template: "{{ states('input_text.claude_selected_project') != '' }}"
+    
+    action:
+      - service: input_text.set_value
+        target:
+          entity_id: input_text.claude_conversation_state
+        data:
+          value: "creating_task"
+      
+      # Create the task
+      - service: rest_command.claude_create_task
+        data:
+          text: "{{ states('input_text.claude_voice_input_buffer') }}"
+          project_name: "{{ states('input_text.claude_selected_project') }}"
+          priority: "{{ states('input_text.claude_task_priority') }}"
+          due_date: "{{ states('input_text.claude_pending_due_date') if states('input_text.claude_pending_due_date') != '' else '' }}"
+          labels: ["voice", "addon", "conversation"]
+          main_task_title: "Voice Command Tasks"
+          conversation_id: "{{ states('input_text.claude_conversation_id') }}"
+      
+      # Wait for task creation
+      - delay: "00:00:03"
+      
+      # Provide success confirmation
+      - service: tts.speak
+        data:
+          media_player_entity_id: media_player.living_room_speaker
+          message: >
+            Perfect! I've added your tasks to {{ states('input_text.claude_selected_project') }}.
+            {% if states('input_text.claude_pending_due_date') != '' %}
+              They're scheduled for {{ states('input_text.claude_pending_due_date') }}.
+            {% endif %}
+            {% if states('input_text.claude_selected_project') == 'Alexa Shopping List' %}
+              Your shopping list is ready for your next store trip!
+            {% elif 'DIY' in states('input_text.claude_selected_project') %}
+              Make sure you have the right tools for these projects.
+            {% elif 'Meal' in states('input_text.claude_selected_project') %}
+              I can help create a shopping list for these meals if needed.
+            {% endif %}
+      
+      # Clean up conversation state
+      - service: automation.trigger
+        target:
+          entity_id: automation.claude_todoist_cleanup_conversation
+
+  # Conversation cleanup
+  - id: claude_todoist_cleanup_conversation
+    alias: "Claude Todoist - Cleanup Conversation"
+    description: "Reset conversation state after completion"
+    trigger:
+      - platform: state
+        entity_id: automation.claude_todoist_final_confirmation
+      - platform: state
+        entity_id: input_boolean.claude_conversation_active
+        to: "off"
+    
+    action:
+      - service: input_boolean.turn_off
+        target:
+          entity_id:
+            - input_boolean.claude_conversation_active
+            - input_boolean.claude_awaiting_project_selection
+            - input_boolean.claude_awaiting_project_creation
+            - input_boolean.claude_awaiting_date_input
+            - input_boolean.claude_awaiting_final_confirmation
+      
+      - service: input_text.set_value
+        target:
+          entity_id: input_text.claude_conversation_state
+        data:
+          value: "idle"
+      
+      - service: input_text.set_value
+        target:
+          entity_id:
+            - input_text.claude_conversation_id
+            - input_text.claude_voice_input_buffer
+            - input_text.claude_parsed_task_items
+            - input_text.claude_project_matches
+            - input_text.claude_selected_project
+            - input_text.claude_pending_due_date
+            - input_text.claude_conversation_context
+        data:
+          value: ""
+      
+      - service: input_text.set_value
+        target:
+          entity_id: input_text.claude_task_priority
+        data:
+          value: "3"
+
+  # Project sync automation
+  - id: claude_todoist_sync_projects
+    alias: "Claude Todoist - Sync Projects to Input Select"
+    description: "Update input_select with current projects from API"
+    trigger:
+      - platform: state
+        entity_id: sensor.claude_todoist_projects
+      - platform: homeassistant
+        event: start
+      - platform: time_pattern
+        minutes: "/30"  # Every 30 minutes
+    
+    condition:
+      - condition: state
+        entity_id: sensor.claude_todoist_api_status
+        state: "healthy"
+    
+    action:
+      - service: input_select.set_options
+        target:
+          entity_id: input_select.claude_available_projects
+        data:
+          options: >
+            {% set project_names = state_attr('sensor.claude_todoist_projects', 'projectNames') %}
+            {% if project_names %}
+              {{ project_names }}
+            {% else %}
+              ["No projects found"]
+            {% endif %}
+
+  # Error handling automation
+  - id: claude_todoist_error_handler
+    alias: "Claude Todoist - Error Handler"
+    description: "Handle errors and timeouts in conversation flow"
+    trigger:
+      - platform: state
+        entity_id: sensor.claude_todoist_api_status
+        to: "unavailable"
+      - platform: template
+        value_template: >
+          {{ is_state('input_boolean.claude_conversation_active', 'on') and 
+             (now() - states.input_boolean.claude_conversation_active.last_changed).total_seconds() > 300 }}
+    
+    action:
+      - service: tts.speak
+        data:
+          media_player_entity_id: media_player.living_room_speaker
+          message: >
+            {% if trigger.entity_id == 'sensor.claude_todoist_api_status' %}
+              Sorry, I'm having trouble connecting to the Todoist service right now. Please try again in a moment.
+            {% else %}
+              The conversation has timed out. Please start again with your voice command.
+            {% endif %}
+      
+      - service: automation.trigger
+        target:
+          entity_id: automation.claude_todoist_cleanup_conversation
+
+# ==========================================
+# UTILITY SCRIPTS
+# ==========================================
+
+script:
+  # Manual project refresh
+  claude_refresh_projects:
+    alias: "Refresh Todoist Projects"
+    icon: mdi:refresh
+    sequence:
+      - service: rest_command.claude_refresh_projects
+      - delay: "00:00:02"
+      - service: automation.trigger
+        target:
+          entity_id: automation.claude_todoist_sync_projects
+
+  # Test conversation flow
+  claude_test_conversation:
+    alias: "Test Conversation Flow"
+    icon: mdi:test-tube
+    sequence:
+      - service: automation.trigger
+        target:
+          entity_id: automation.claude_todoist_conversation_handler
+        data:
+          variables:
+            trigger:
+              slots:
+                task_items: "test task"
+                project_hint: "test project"
+
+# ==========================================
+# STATISTICS AND MONITORING
+# ==========================================
+
+sensor:
+  - platform: history_stats
+    name: "Voice Commands Today"
+    entity_id: input_boolean.claude_conversation_active
+    state: 'on'
+    type: count
+    start: '{{ now().replace(hour=0, minute=0, second=0) }}'
+    end: '{{ now() }}'
+  
+  - platform: history_stats
+    name: "Voice Commands This Week"
+    entity_id: input_boolean.claude_conversation_active
+    state: 'on'
+    type: count
+    start: '{{ as_timestamp(now().replace(hour=0, minute=0, second=0)) - now().weekday() * 86400 }}'
+    end: '{{ now() }}'
+
+  - platform: history_stats
+    name: "Conversation Success Rate"
+    entity_id: input_text.claude_conversation_state
+    state: 'creating_task'
+    type: count
+    start: '{{ now().replace(hour=0, minute=0, second=0) }}'
+    end: '{{ now() }}'
+
+# ==========================================
+# DASHBOARD CONFIGURATION
+# ==========================================
+
+# Lovelace dashboard card configuration
+# Add this to your dashboard YAML or use the UI editor
+
+# type: vertical-stack
+# cards:
+#   - type: entity
+#     entity: sensor.claude_todoist_api_status
+#     name: "Todoist Add-on Status"
+#     icon: mdi:brain
+#   
+#   - type: entities
+#     title: "Conversation Status"
+#     entities:
+#       - entity: input_boolean.claude_conversation_active
+#         name: "Active Conversation"
+#       - entity: input_text.claude_conversation_state
+#         name: "Current State"
+#       - entity: sensor.claude_todoist_projects
+#         name: "Available Projects"
+#   
+#   - type: entities
+#     title: "Usage Statistics"
+#     entities:
+#       - entity: sensor.voice_commands_today
+#         name: "Commands Today"
+#       - entity: sensor.voice_commands_this_week
+#         name: "Commands This Week"
+#       - entity: sensor.conversation_success_rate
+#         name: "Success Rate"
+#   
+#   - type: button
+#     name: "Refresh Projects"
+#     tap_action:
+#       action: call-service
+#       service: script.claude_refresh_projects
+#   
+#   - type: button
+#     name: "Test Conversation"
+#     tap_action:
+#       action: call-service
+#       service: script.claude_test_conversation

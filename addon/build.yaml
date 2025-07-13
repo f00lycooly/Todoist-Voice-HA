@@ -1,0 +1,18 @@
+# ============================================================
+# build.yaml - Add-on build configuration
+
+build_from:
+  aarch64: "ghcr.io/hassio-addons/base-aarch64:15.0.7"
+  amd64: "ghcr.io/hassio-addons/base-amd64:15.0.7"
+  armhf: "ghcr.io/hassio-addons/base-armhf:15.0.7"
+  armv7: "ghcr.io/hassio-addons/base-armv7:15.0.7"
+  i386: "ghcr.io/hassio-addons/base-i386:15.0.7"
+
+labels:
+  org.opencontainers.image.title: "Todoist Voice HA"
+  org.opencontainers.image.description: "Intelligent conversational task creation for Todoist"
+  org.opencontainers.image.source: "https://github.com/your-username/todoist-voice-ha"
+  org.opencontainers.image.licenses: "MIT"
+
+args:
+  TEMPIO_VERSION: "2023.01.0"

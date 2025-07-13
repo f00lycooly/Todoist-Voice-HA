@@ -1,0 +1,36 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configure Todoist Voice HA Integration",
+        "description": "Set up the Todoist Voice HA conversational assistant integration.",
+        "data": {
+          "addon_url": "Add-on URL",
+          "auto_create_entities": "Auto-create helper entities",
+          "conversation_timeout": "Conversation timeout (seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the add-on. Please check the URL and ensure the add-on is running.",
+      "addon_unhealthy": "The add-on is not in a healthy state. Please check the add-on logs.",
+      "unknown_error": "An unexpected error occurred during setup."
+    },
+    "abort": {
+      "already_configured": "This integration is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure Todoist Voice HA Options",
+        "description": "Update configuration options for the Todoist Voice HA integration.",
+        "data": {
+          "addon_url": "Add-on URL",
+          "auto_create_entities": "Auto-create helper entities",
+          "conversation_timeout": "Conversation timeout (seconds)"
+        }
+      }
+    }
+  }
+}

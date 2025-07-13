@@ -1,0 +1,9 @@
+{
+  "name": "Todoist Voice HA",
+  "hacs": "1.6.0",
+  "domains": ["todoist_voice_ha_integration"],
+  "iot_class": "Local Push",
+  "homeassistant": "2023.1.0",
+  "zip_release": true,
+  "filename": "todoist-voice-ha-integration.zip"
+}
