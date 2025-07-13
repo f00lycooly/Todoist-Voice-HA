@@ -17,8 +17,7 @@ RUN \
         apt-get install -y --no-install-recommends nodejs npm curl && \
         apt-get clean && \
         rm -rf /var/lib/apt/lists/*; \
-    fi \
-    && npm install -g npm@latest
+    fi
 
 # Create app directory
 WORKDIR /app
