@@ -1,5 +1,5 @@
 # Dockerfile for Todoist Voice HA Add-on
-ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.19
+ARG BUILD_FROM=node:20-alpine
 FROM $BUILD_FROM
 
 # Set shell
