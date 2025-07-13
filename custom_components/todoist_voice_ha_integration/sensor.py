@@ -1,4 +1,3 @@
- ============================================================
 # custom_components/todoist_voice_ha_integration/sensor.py
 """Sensor platform for Todoist Voice HA Integration."""
 import logging
