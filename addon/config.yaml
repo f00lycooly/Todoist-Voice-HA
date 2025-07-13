@@ -46,7 +46,7 @@ schema:
   conversation_timeout: int(30,600)
   project_cache_timeout: int(60,1800)
 
-image: "ghcr.io/{username}/todoist-voice-ha"
+image: "ghcr.io/f00lycooly/todoist-voice-ha"
 
 map:
   - addon_config:rw
@@ -81,9 +81,9 @@ environment:
   - name: "SUPERVISOR_TOKEN"
     value: "%%SUPERVISOR_TOKEN%%"
 
-url: "https://github.com/{username}/todoist-voice-ha"
-documentation: "https://github.com/{username}/todoist-voice-ha/blob/main/README.md"
-repository: "https://github.com/{username}/todoist-voice-ha"
+url: "https://github.com/f00lycooly/todoist-voice-ha"
+documentation: "https://github.com/f00lycooly/todoist-voice-ha/blob/main/README.md"
+repository: "https://github.com/f00lycooly/todoist-voice-ha"
 
 advanced: true
 stage: stable

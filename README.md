@@ -19,7 +19,7 @@ Intelligent conversational task creation for Todoist with dynamic project manage
 ## Quick Start
 
 ### 1. Install the Add-on
-Add repository: `https://github.com/YOUR-USERNAME/Todoist-Voice-HA`
+Add repository: `https://github.com/f00lycooly/Todoist-Voice-HA`
 
 ### 2. Install the Integration
 Via HACS or manual installation
@@ -47,10 +47,10 @@ Get your Todoist API token and configure both components
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-[releases-shield]: https://img.shields.io/github/release/YOUR-USERNAME/Todoist-Voice-HA.svg?style=for-the-badge
-[releases]: https://github.com/YOUR-USERNAME/Todoist-Voice-HA/releases
-[commits-shield]: https://img.shields.io/github/commit-activity/y/YOUR-USERNAME/Todoist-Voice-HA.svg?style=for-the-badge
-[commits]: https://github.com/YOUR-USERNAME/Todoist-Voice-HA/commits/main
+[releases-shield]: https://img.shields.io/github/release/f00lycooly/Todoist-Voice-HA.svg?style=for-the-badge
+[releases]: https://github.com/f00lycooly/Todoist-Voice-HA/releases
+[commits-shield]: https://img.shields.io/github/commit-activity/y/f00lycooly/Todoist-Voice-HA.svg?style=for-the-badge
+[commits]: https://github.com/f00lycooly/Todoist-Voice-HA/commits/main
 [hacs]: https://github.com/hacs/integration
 [hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
-[license-shield]: https://img.shields.io/github/license/YOUR-USERNAME/Todoist-Voice-HA.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/f00lycooly/Todoist-Voice-HA.svg?style=for-the-badge

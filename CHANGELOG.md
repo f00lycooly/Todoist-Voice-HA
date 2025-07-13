@@ -27,5 +27,5 @@ All notable changes to this project will be documented in this file.
 - Implemented proper input validation
 - Secure token handling and storage
 
-[Unreleased]: https://github.com/YOUR-USERNAME/Todoist-Voice-HA/compare/v2.0.0...HEAD
-[2.0.0]: https://github.com/YOUR-USERNAME/Todoist-Voice-HA/releases/tag/v2.0.0
+[Unreleased]: https://github.com/f00lycooly/Todoist-Voice-HA/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/f00lycooly/Todoist-Voice-HA/releases/tag/v2.0.0

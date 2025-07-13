@@ -1,3 +1,14 @@
+// Load environment variables first
+require('dotenv').config({ 
+    path: process.env.NODE_ENV === 'development' ? '.env.development' : '.env' 
+});
+
+console.log('Environment loaded:', {
+    NODE_ENV: process.env.NODE_ENV,
+    HAS_TOKEN: !!process.env.TODOIST_API_TOKEN,
+    TOKEN_LENGTH: process.env.TODOIST_API_TOKEN ? process.env.TODOIST_API_TOKEN.length : 0
+});
+
 // src/server.js - Enhanced for Home Assistant Add-on with conversational capabilities
 require('dotenv').config();
 const express = require('express');

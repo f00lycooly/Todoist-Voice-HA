@@ -10,7 +10,7 @@ Complete installation instructions for Todoist Voice HA.
 
 ## Step 1: Install the Add-on
 
-1. Add repository: `https://github.com/YOUR-USERNAME/Todoist-Voice-HA`
+1. Add repository: `https://github.com/f00lycooly/Todoist-Voice-HA`
 2. Install "Todoist Voice HA" add-on
 3. Configure with your Todoist API token
 4. Start the add-on
