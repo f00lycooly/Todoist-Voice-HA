@@ -9,7 +9,6 @@ arch:
   - aarch64
   - amd64
   - i386
-
 startup: application
 boot: auto
 hassio_api: true
@@ -18,10 +17,8 @@ auth_api: false
 ingress: true
 panel_icon: mdi:brain
 panel_title: "Todoist AI Assistant"
-
 ports:
   8080/tcp: 8080
-
 options:
   todoist_token: ""
   log_level: "info"
@@ -33,7 +30,6 @@ options:
   require_date_confirmation: false
   conversation_timeout: 300
   project_cache_timeout: 300
-
 schema:
   todoist_token: str
   log_level: list(debug|info|warning|error)
@@ -45,45 +41,26 @@ schema:
   require_date_confirmation: bool
   conversation_timeout: int(30,600)
   project_cache_timeout: int(60,1800)
-
 image: "ghcr.io/f00lycooly/todoist-voice-ha:latest"
-
 map:
   - addon_config:rw
   - share:rw
-
 services:
   - "http://homeassistant:8080"
-
 homeassistant_api: true
-
 backup:
   - addon_config
-
 healthcheck:
   test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
   interval: 30s
   timeout: 10s
   retries: 3
   start_period: 40s
-
 resources:
   cpu: 1.0
   memory: 512M
-
-environment:
-  - name: "TODOIST_API_TOKEN"
-    value: "%%TODOIST_TOKEN%%"
-  - name: "LOG_LEVEL"
-    value: "%%LOG_LEVEL%%"
-  - name: "HOME_ASSISTANT_URL"
-    value: "http://supervisor/core"
-  - name: "SUPERVISOR_TOKEN"
-    value: "%%SUPERVISOR_TOKEN%%"
-
 url: "https://github.com/f00lycooly/todoist-voice-ha"
 documentation: "https://github.com/f00lycooly/todoist-voice-ha/blob/main/README.md"
 repository: "https://github.com/f00lycooly/todoist-voice-ha"
-
 advanced: true
 stage: stable
