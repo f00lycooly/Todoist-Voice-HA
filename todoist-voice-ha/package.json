@@ -1,0 +1,16 @@
+{
+  "name": "todoist-voice-ha",
+  "version": "2.0.0",
+  "description": "Todoist Voice HA Add-on",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "express-rate-limit": "^7.1.5"
+  }
+}
