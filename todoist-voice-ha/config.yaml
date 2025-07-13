@@ -1,6 +1,6 @@
 name: "Todoist Voice HA"
-description: "Minimal test add-on"
-version: "1.0.0"
+description: "Conversational task creation for Todoist"
+version: "2.0.0"
 slug: "todoistvoice"
 arch:
   - amd64
@@ -10,4 +10,4 @@ ports:
   8080/tcp: 8080
 options: {}
 schema: {}
-image: "hello-world"
+image: "ghcr.io/f00lycooly/todoist-voice-ha:latest"
