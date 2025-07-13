@@ -1,26 +1,15 @@
 # Dockerfile for Todoist Voice HA Add-on
-ARG BUILD_FROM=node:20-alpine
-FROM $BUILD_FROM
+FROM node:20-alpine
 
-# Set shell
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-# Install Node.js and dependencies
-# Check if we're on Alpine or Debian and install accordingly
-RUN \
-    if command -v apk >/dev/null; then \
-        # Alpine-based
-        apk add --no-cache nodejs npm curl; \
-    else \
-        # Debian-based
-        apt-get update && \
-        apt-get install -y --no-install-recommends nodejs npm curl && \
-        apt-get clean && \
-        rm -rf /var/lib/apt/lists/*; \
-    fi
+# Install additional system dependencies
+RUN apk add --no-cache curl bash
 
 # Create app directory
 WORKDIR /app
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 -G nodejs
 
 # Copy package files first (for better Docker layer caching)
 COPY package*.json ./
@@ -30,20 +19,9 @@ RUN npm ci --only=production && npm cache clean --force
 
 # Copy app source
 COPY src/ ./src/
-COPY *.js ./
-
-# Create non-root user (compatible with both Alpine and Debian)
-RUN \
-    if command -v adduser >/dev/null && adduser --help 2>&1 | grep -q BusyBox; then \
-        # Alpine
-        addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001 -G nodejs; \
-    else \
-        # Debian
-        useradd -r -u 1001 -g root nodejs; \
-    fi
 
 # Change ownership
-RUN chown -R nodejs:$(id -gn nodejs) /app
+RUN chown -R nodejs:nodejs /app
 USER nodejs
 
 # Expose port
