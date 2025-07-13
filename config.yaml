@@ -10,6 +10,7 @@ arch:
   - amd64
   - i386
 
+# Startup configuration
 startup: application
 boot: auto
 hassio_api: true
@@ -19,9 +20,11 @@ ingress: true
 panel_icon: mdi:brain
 panel_title: "Todoist AI Assistant"
 
+# Port configuration
 ports:
   8080/tcp: 8080
 
+# Options and schema for user configuration
 options:
   todoist_token: ""
   log_level: "info"
@@ -46,20 +49,26 @@ schema:
   conversation_timeout: int(30,600)
   project_cache_timeout: int(60,1800)
 
+# NOW USING YOUR PUBLIC IMAGE!
 image: "ghcr.io/f00lycooly/todoist-voice-ha"
 
+# Map add-on configuration
 map:
   - addon_config:rw
   - share:rw
 
+# Services this add-on provides to Home Assistant
 services:
   - "http://homeassistant:8080"
 
+# Home Assistant integration
 homeassistant_api: true
 
+# Backup configuration
 backup:
   - addon_config
 
+# Health check
 healthcheck:
   test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
   interval: 30s
@@ -67,10 +76,12 @@ healthcheck:
   retries: 3
   start_period: 40s
 
+# Resource limits
 resources:
   cpu: 1.0
   memory: 512M
 
+# Environment variables
 environment:
   - name: "TODOIST_API_TOKEN"
     value: "%%TODOIST_TOKEN%%"
@@ -81,9 +92,11 @@ environment:
   - name: "SUPERVISOR_TOKEN"
     value: "%%SUPERVISOR_TOKEN%%"
 
+# Add-on documentation
 url: "https://github.com/f00lycooly/todoist-voice-ha"
 documentation: "https://github.com/f00lycooly/todoist-voice-ha/blob/main/README.md"
 repository: "https://github.com/f00lycooly/todoist-voice-ha"
 
+# Advanced features
 advanced: true
 stage: stable
