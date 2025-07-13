@@ -1,7 +1,7 @@
 name: "Todoist Voice HA"
-description: "Simple test"
+description: "Minimal test add-on"
 version: "1.0.0"
-slug: "todoist-voice-ha"
+slug: "todoistvoice"
 arch:
   - amd64
 startup: application
@@ -10,4 +10,4 @@ ports:
   8080/tcp: 8080
 options: {}
 schema: {}
-image: "alpine:latest"
+image: "hello-world"
