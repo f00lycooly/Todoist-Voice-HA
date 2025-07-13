@@ -2,15 +2,8 @@ name: "Todoist Voice HA"
 description: "Intelligent conversational task creation for Todoist with dynamic project management and AI-powered voice integration"
 version: "2.0.0"
 slug: "todoist-voice-ha"
-init: false
 arch:
-  - armhf
-  - armv7
-  - aarch64
   - amd64
-  - i386
-
-# Startup configuration
 startup: application
 boot: auto
 hassio_api: true
@@ -20,83 +13,29 @@ ingress: true
 panel_icon: mdi:brain
 panel_title: "Todoist AI Assistant"
 
-# Port configuration
 ports:
   8080/tcp: 8080
 
-# Options and schema for user configuration
 options:
   todoist_token: ""
   log_level: "info"
-  rate_limit_requests: 200
-  rate_limit_window: 900
-  cors_origins: ["*"]
-  default_project_name: "Inbox"
-  auto_create_projects: true
-  require_date_confirmation: false
-  conversation_timeout: 300
-  project_cache_timeout: 300
 
 schema:
   todoist_token: str
   log_level: list(debug|info|warning|error)
-  rate_limit_requests: int(1,1000)
-  rate_limit_window: int(60,3600)
-  cors_origins: [str]
-  default_project_name: str
-  auto_create_projects: bool
-  require_date_confirmation: bool
-  conversation_timeout: int(30,600)
-  project_cache_timeout: int(60,1800)
 
-# NOW USING YOUR PUBLIC IMAGE!
-image: "ghcr.io/f00lycooly/todoist-voice-ha"
+image: "ghcr.io/f00lycooly/todoist-voice-ha:latest"
 
-# Map add-on configuration
 map:
   - addon_config:rw
-  - share:rw
 
-# Services this add-on provides to Home Assistant
-services:
-  - "http://homeassistant:8080"
-
-# Home Assistant integration
 homeassistant_api: true
 
-# Backup configuration
-backup:
-  - addon_config
-
-# Health check
-healthcheck:
-  test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-  interval: 30s
-  timeout: 10s
-  retries: 3
-  start_period: 40s
-
-# Resource limits
-resources:
-  cpu: 1.0
-  memory: 512M
-
-# Environment variables
 environment:
   - name: "TODOIST_API_TOKEN"
     value: "%%TODOIST_TOKEN%%"
   - name: "LOG_LEVEL"
     value: "%%LOG_LEVEL%%"
-  - name: "HOME_ASSISTANT_URL"
-    value: "http://supervisor/core"
-  - name: "SUPERVISOR_TOKEN"
-    value: "%%SUPERVISOR_TOKEN%%"
 
-# Add-on documentation
-url: "https://github.com/f00lycooly/todoist-voice-ha"
-documentation: "https://github.com/f00lycooly/todoist-voice-ha/blob/main/README.md"
-repository: "https://github.com/f00lycooly/todoist-voice-ha"
-
-# Advanced features
-advanced: true
-stage: stable
+url: "https://github.com/f00lycooly/Todoist-Voice-HA"
+documentation: "https://github.com/f00lycooly/Todoist-Voice-HA/blob/main/README.md"
